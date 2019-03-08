@@ -207,7 +207,7 @@ function decryption(data, key) {
 var express = require('express');
 var router = express.Router();
 
-router.get('/wallet/usdt/balance', function (req, res, next){
+router.get('wallet/usdt/balance', function (req, res, next){
 	logger.info("查询余额Url",req.url)
 	console.log("查询余额Url",req.url)		
 	var arg = url.parse(req.url, true).query; 
@@ -284,7 +284,7 @@ router.post('/v2/wallet/usdt/sendto',multipartMiddleware, function (req, res, ne
 	sendto(res,privkey,fromaddress,toaddress,amount);
 });
 
-router.post('/sendto',multipartMiddleware, function (req, res, next) {	
+router.post('wallet/usdt/sendto',multipartMiddleware, function (req, res, next) {	
 	logger.info("转账Url",req.url)
 	console.log("转账Url",req.url)		
 	try
@@ -312,7 +312,7 @@ router.post('/sendto',multipartMiddleware, function (req, res, next) {
 	sendto(res,privkey,fromaddress,toaddress,amount);
 });
 
-router.get('/sendto', function (req, res, next) {	 
+router.get('wallet/usdt/sendto', function (req, res, next) {	 
 	logger.info("转账Url",req.url)
 	console.log("转账Url",req.url)	
 	try
