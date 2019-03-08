@@ -21,7 +21,7 @@ router.get('/wallet/usdt/balance', function (req, res, next){
 	json.msg = "没有查询到记录"
 	json.errcode = -1
 	res.end(JSON.stringify(json))	
-}
+})
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
