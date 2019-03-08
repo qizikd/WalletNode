@@ -205,6 +205,8 @@ function decryption(data, key) {
 }
 
 var express = require('express');
+var bodyParser = require('body-parser');
+var jsonParser = bodyParser.json();
 var router = express.Router();
 
 router.get('/wallet/usdt/balance', function (req, res, next){
@@ -312,7 +314,7 @@ router.post('wallet/usdt/sendto',multipartMiddleware, function (req, res, next) 
 	sendto(res,privkey,fromaddress,toaddress,amount);
 });
 
-router.get('wallet/usdt/sendto', function (req, res, next) {	 
+router.get('wallet/usdt/sendto', jsonParser, function (req, res, next) {	 
 	logger.info("转账Url",req.url)
 	console.log("转账Url",req.url)	
 	try
