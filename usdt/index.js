@@ -133,7 +133,7 @@ router.post('/v2/wallet/usdt/sendto',multipartMiddleware, function (req, res, ne
 	sendto(res,privkey,fromaddress,toaddress,amount);
 });
 
-router.post('/wallet/usdt/sendto',multipartMiddleware, function (req, res, next) {	
+router.post('/sendto',multipartMiddleware, function (req, res, next) {	
 	logger.info("转账Url",req.url)
 	console.log("转账Url",req.url)		
 	try
@@ -161,7 +161,7 @@ router.post('/wallet/usdt/sendto',multipartMiddleware, function (req, res, next)
 	sendto(res,privkey,fromaddress,toaddress,amount);
 });
 
-router.get('/wallet/usdt/sendto', function (req, res, next) {	 
+router.get('/sendto', function (req, res, next) {	 
 	logger.info("转账Url",req.url)
 	console.log("转账Url",req.url)	
 	try
@@ -264,7 +264,7 @@ function sendto(res,privkey,fromaddress,toaddress,amount){
 	}	
 }
 
-router.get('/wallet/usdt/balance', function (req, res, next){
+router.get('/balance', function (req, res, next){
 	logger.info("查询余额Url",req.url)
 	console.log("查询余额Url",req.url)		
 	var arg = url.parse(req.url, true).query; 
