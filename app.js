@@ -13,7 +13,7 @@ app.use(log4js.useLog());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use('/wallet/usdt', usdtRouter);
+app.use('/', usdtRouter);
 //app.use('/v2/usdt', usdtV2Router);
 
 // catch 404 and forward to error handler
