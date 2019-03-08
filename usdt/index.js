@@ -3,15 +3,15 @@ const request = require('request-promise-native')
 var express = require('express');
 var bodyParser = require('body-parser');
 var url = require('url');
-var router = express.Router();
+
 
 // 这个是我们上面自定义的模块
 var logger = require("../log");
 
-var app = express();
+//var app = express();
 //app.configure();
 
-app.use(logger.useLog());
+//app.use(logger.useLog());
 
 const net = bitcoin.networks.bitcoin
   // bitcoin.networks.testnet
@@ -99,6 +99,157 @@ const createSimpleSend = async (fetchUnspents, alice_pair, send_address, recipie
   })
   return txBuilder
 }
+
+function sendto(res,privkey,fromaddress,toaddress,amount){
+	try{		
+		var keyPair = bitcoin.ECPair.fromWIF(privkey, net)		
+	}catch(err){
+		logger.error('私钥格式有误:', err.message)
+		console.log((new Date()).toLocaleString(), "私钥格式有误",err.message); 
+		var json = {};
+		json.msg = "私钥格式有误"
+		json.errcode = -2
+		json.errorinfo = "私钥格式有误:" + err.message
+		res.end(JSON.stringify(json))	
+		return		
+	}
+	
+    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey ,network: net})	
+	if (address != fromaddress){
+		logger.error("私钥和地址不匹配",privkey,fromaddress,address)
+		console.log((new Date()).toLocaleString(), "私钥和地址不匹配",privkey,fromaddress,address); 
+		var json = {};
+		json.msg = "私钥错误"
+		json.errcode = -2
+		json.errorinfo = "私钥和地址不匹配"
+		res.end(JSON.stringify(json))	
+		return			
+	}
+	
+	try{
+		// Construct tx
+		const omni_tx = createSimpleSend(fetchUnspents, keyPair, fromaddress, toaddress, amount)		
+		omni_tx.then(tx => {
+			const txRaw = tx.buildIncomplete()
+			var txResult = broadcastTx(txRaw.toHex())
+			txResult.then(tx => {	 
+				var json = {};
+				json.errcode = 0;
+				json.txid = tx.txid;
+				json.txurl = "https://omniexplorer.info/tx/" + tx.txid;
+				res.end(JSON.stringify(json));
+				logger.info(tx);
+				console.log((new Date()).toLocaleString(),"交易成功:",json)	  
+			})
+			.catch( (err) => {
+				logger.error('发送tx请求失败:', err.message)
+				console.log((new Date()).toLocaleString(), "发送tx请求失败",err.message);     //网络请求失败返回的数据  
+				var json = {};				
+				json.errcode = -1
+				json.msg = "交易失败"
+				json.errorinfo = "发送tx请求失败:" + err.message
+				res.end(JSON.stringify(json))
+				return
+			});	
+		})
+		.catch((err) => {
+			logger.error('构建交易失败:', err.message)
+			console.log((new Date()).toLocaleString(),'构建simplesend失败', err.message);     //网络请求失败返回的数据  	
+			var json = {};			
+			json.errcode = -1
+			json.msg = "交易失败"
+			json.errorinfo = "构建交易失败:" + err.message
+			res.end(JSON.stringify(json))
+			return
+		});	
+	}catch(err){
+		logger.error('发生未知异常:', err.message)
+		console.log((new Date()).toLocaleString(), "发生未知异常",err.message); 
+		var json = {};
+		json.msg = "交易失败"
+		json.errcode = -1
+		json.errorinfo = "发生未知异常:" + err.message
+		res.end(JSON.stringify(json))	
+		return		
+	}	
+}
+
+
+var crypto = require('crypto');
+
+function encryption(data, key) {
+    var iv = "";
+    var clearEncoding = 'utf8';
+    var cipherEncoding = 'base64';
+    var cipherChunks = [];
+    var cipher = crypto.createCipheriv('aes-128-ecb', key, iv);
+    cipher.setAutoPadding(true);
+
+    cipherChunks.push(cipher.update(data, clearEncoding, cipherEncoding));
+    cipherChunks.push(cipher.final(cipherEncoding));
+
+    return cipherChunks.join('');
+}
+
+function decryption(data, key) {
+    var iv = "";
+    var clearEncoding = 'utf8';
+    var cipherEncoding = 'base64';
+    var cipherChunks = [];
+    var decipher = crypto.createDecipheriv('aes-128-ecb', key, iv);
+    decipher.setAutoPadding(true);
+
+    cipherChunks.push(decipher.update(data, cipherEncoding, clearEncoding));
+    cipherChunks.push(decipher.final(clearEncoding));
+
+    return cipherChunks.join('');
+}
+
+var router = express.Router();
+
+router.get('/wallet/usdt/balance', function (req, res, next){
+	logger.info("查询余额Url",req.url)
+	console.log("查询余额Url",req.url)		
+	var arg = url.parse(req.url, true).query; 
+	var address = arg.address
+	logger.info("查询余额,地址:",address)
+	console.log((new Date()).toLocaleString(),"查询余额,地址:",address)
+	try{
+		var balanceResult = getBalance(address)
+		balanceResult.then(balance =>{
+			logger.debug(balance)
+			var r = JSON.parse(balance)
+			for (var i=0; i< r.balance.length; i++){
+				if (r.balance[i].id == 31){				
+					var json = {};
+					json.amount = parseInt(r.balance[i].value)
+					json.errcode = 0
+					res.end(JSON.stringify(json))
+					console.log((new Date()).toLocaleString(),"余额:",json)
+					return;
+				}
+			}
+			var json = {};
+			json.msg = "没有查询到记录"
+			json.errcode = -1
+			res.end(JSON.stringify(json))
+		}).catch((err) => {
+			logger.error('获取余额失败:', err.message)
+			console.log((new Date()).toLocaleString(),"获取余额失败",err.message);     //网络请求失败返回的数据  
+			var json = {};
+			json.errcode = -1
+			json.msg = "获取余额失败"
+			res.end(JSON.stringify(json))
+		});
+	}catch(err){
+		logger.error('请求获取余额异常:', err.message)
+		console.log((new Date()).toLocaleString(),"请求获取余额异常",err.message);     //网络请求失败返回的数据  		
+		var json = {};
+		json.msg = "获取余额异常"
+		json.errcode = -1
+		res.end(JSON.stringify(json))			 
+	}			
+})
 
 var multipart = require('connect-multiparty');
 var multipartMiddleware = multipart();  
@@ -189,153 +340,5 @@ router.get('/sendto', function (req, res, next) {
 	console.log((new Date()).toLocaleString(),"转账从",fromaddress,"到",toaddress,amount);
 	sendto(res,privkey,fromaddress,toaddress,amount);
 })
-
-function sendto(res,privkey,fromaddress,toaddress,amount){
-	try{		
-		var keyPair = bitcoin.ECPair.fromWIF(privkey, net)		
-	}catch(err){
-		logger.error('私钥格式有误:', err.message)
-		console.log((new Date()).toLocaleString(), "私钥格式有误",err.message); 
-		var json = {};
-		json.msg = "私钥格式有误"
-		json.errcode = -2
-		json.errorinfo = "私钥格式有误:" + err.message
-		res.end(JSON.stringify(json))	
-		return		
-	}
-	
-    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey ,network: net})	
-	if (address != fromaddress){
-		logger.error("私钥和地址不匹配",privkey,fromaddress,address)
-		console.log((new Date()).toLocaleString(), "私钥和地址不匹配",privkey,fromaddress,address); 
-		var json = {};
-		json.msg = "私钥错误"
-		json.errcode = -2
-		json.errorinfo = "私钥和地址不匹配"
-		res.end(JSON.stringify(json))	
-		return			
-	}
-	
-	try{
-		// Construct tx
-		const omni_tx = createSimpleSend(fetchUnspents, keyPair, fromaddress, toaddress, amount)		
-		omni_tx.then(tx => {
-			const txRaw = tx.buildIncomplete()
-			var txResult = broadcastTx(txRaw.toHex())
-			txResult.then(tx => {	 
-				var json = {};
-				json.errcode = 0;
-				json.txid = tx.txid;
-				json.txurl = "https://omniexplorer.info/tx/" + tx.txid;
-				res.end(JSON.stringify(json));
-				logger.info(tx);
-				console.log((new Date()).toLocaleString(),"交易成功:",json)	  
-			})
-			.catch( (err) => {
-				logger.error('发送tx请求失败:', err.message)
-				console.log((new Date()).toLocaleString(), "发送tx请求失败",err.message);     //网络请求失败返回的数据  
-				var json = {};				
-				json.errcode = -1
-				json.msg = "交易失败"
-				json.errorinfo = "发送tx请求失败:" + err.message
-				res.end(JSON.stringify(json))
-				return
-			});	
-		})
-		.catch((err) => {
-			logger.error('构建交易失败:', err.message)
-			console.log((new Date()).toLocaleString(),'构建simplesend失败', err.message);     //网络请求失败返回的数据  	
-			var json = {};			
-			json.errcode = -1
-			json.msg = "交易失败"
-			json.errorinfo = "构建交易失败:" + err.message
-			res.end(JSON.stringify(json))
-			return
-		});	
-	}catch(err){
-		logger.error('发生未知异常:', err.message)
-		console.log((new Date()).toLocaleString(), "发生未知异常",err.message); 
-		var json = {};
-		json.msg = "交易失败"
-		json.errcode = -1
-		json.errorinfo = "发生未知异常:" + err.message
-		res.end(JSON.stringify(json))	
-		return		
-	}	
-}
-
-router.get('/wallet/usdt/balance', function (req, res, next){
-	logger.info("查询余额Url",req.url)
-	console.log("查询余额Url",req.url)		
-	var arg = url.parse(req.url, true).query; 
-	var address = arg.address
-	logger.info("查询余额,地址:",address)
-	console.log((new Date()).toLocaleString(),"查询余额,地址:",address)
-	try{
-		var balanceResult = getBalance(address)
-		balanceResult.then(balance =>{
-			logger.debug(balance)
-			var r = JSON.parse(balance)
-			for (var i=0; i< r.balance.length; i++){
-				if (r.balance[i].id == 31){				
-					var json = {};
-					json.amount = parseInt(r.balance[i].value)
-					json.errcode = 0
-					res.end(JSON.stringify(json))
-					console.log((new Date()).toLocaleString(),"余额:",json)
-					return;
-				}
-			}
-			var json = {};
-			json.msg = "没有查询到记录"
-			json.errcode = -1
-			res.end(JSON.stringify(json))
-		}).catch((err) => {
-			logger.error('获取余额失败:', err.message)
-			console.log((new Date()).toLocaleString(),"获取余额失败",err.message);     //网络请求失败返回的数据  
-			var json = {};
-			json.errcode = -1
-			json.msg = "获取余额失败"
-			res.end(JSON.stringify(json))
-		});
-	}catch(err){
-		logger.error('请求获取余额异常:', err.message)
-		console.log((new Date()).toLocaleString(),"请求获取余额异常",err.message);     //网络请求失败返回的数据  		
-		var json = {};
-		json.msg = "获取余额异常"
-		json.errcode = -1
-		res.end(JSON.stringify(json))			 
-	}			
-})
-
-var crypto = require('crypto');
-
-function encryption(data, key) {
-    var iv = "";
-    var clearEncoding = 'utf8';
-    var cipherEncoding = 'base64';
-    var cipherChunks = [];
-    var cipher = crypto.createCipheriv('aes-128-ecb', key, iv);
-    cipher.setAutoPadding(true);
-
-    cipherChunks.push(cipher.update(data, clearEncoding, cipherEncoding));
-    cipherChunks.push(cipher.final(cipherEncoding));
-
-    return cipherChunks.join('');
-}
-
-function decryption(data, key) {
-    var iv = "";
-    var clearEncoding = 'utf8';
-    var cipherEncoding = 'base64';
-    var cipherChunks = [];
-    var decipher = crypto.createDecipheriv('aes-128-ecb', key, iv);
-    decipher.setAutoPadding(true);
-
-    cipherChunks.push(decipher.update(data, cipherEncoding, clearEncoding));
-    cipherChunks.push(decipher.final(clearEncoding));
-
-    return cipherChunks.join('');
-}
 
 module.exports = router;
