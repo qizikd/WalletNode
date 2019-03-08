@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/', mnemonicRouter);
 
 var router = express.Router();
-router.get('/wallet/usdt/balance', function (req, res, next){
+router.get('/balance', function (req, res, next){
 	logger.info("查询余额Url",req.url)
 	console.log("查询余额Url",req.url)		
 	var arg = url.parse(req.url, true).query; 
