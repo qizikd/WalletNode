@@ -1,7 +1,7 @@
 var createError = require('http-errors');
 var express = require('express');
 
-var usdtRouter = require('./usdt/index');
+var usdtRouter = require('./usdt/usdt');
 //var usdtV2Router = require('./usdt/index2');
 
 var app = express();

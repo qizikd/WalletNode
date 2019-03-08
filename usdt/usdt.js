@@ -1,6 +1,5 @@
 const bitcoin = require('bitcoinjs-lib')
 const request = require('request-promise-native')
-var express = require('express');
 var bodyParser = require('body-parser');
 var url = require('url');
 
@@ -205,6 +204,7 @@ function decryption(data, key) {
     return cipherChunks.join('');
 }
 
+var express = require('express');
 var router = express.Router();
 
 router.get('/wallet/usdt/balance', function (req, res, next){
