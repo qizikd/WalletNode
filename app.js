@@ -10,6 +10,19 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use('/', mnemonicRouter);
 
+var router = express.Router();
+router.get('/wallet/usdt/balance', function (req, res, next){
+	logger.info("查询余额Url",req.url)
+	console.log("查询余额Url",req.url)		
+	var arg = url.parse(req.url, true).query; 
+	var address = arg.address
+	console.log((new Date()).toLocaleString(),"查询余额,地址:",address)	
+	var json = {};
+	json.msg = "没有查询到记录"
+	json.errcode = -1
+	res.end(JSON.stringify(json))	
+}
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
