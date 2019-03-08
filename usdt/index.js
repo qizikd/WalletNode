@@ -9,7 +9,7 @@ var router = express.Router();
 var logger = require("../log");
 
 var app = express();
-app.configure();
+//app.configure();
 
 app.use(logger.useLog());
 
