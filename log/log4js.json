@@ -1,0 +1,13 @@
+{
+    "appenders": [
+        {
+            "type": "console"
+        },
+        {
+            "type": "dateFile",
+            "filename": "logs/wallet.log",
+            "pattern": "-yyyy-MM-dd",
+            "alwaysIncludePattern": true
+        }
+    ]
+}

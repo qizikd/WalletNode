@@ -1,0 +1,22 @@
+{
+  "name": "walletnode",
+  "version": "1.0.0",
+  "description": "usdt转账\r xrp转账",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qizikd/WalletNode.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/qizikd/WalletNode/issues"
+  },
+  "homepage": "https://github.com/qizikd/WalletNode#readme",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}
