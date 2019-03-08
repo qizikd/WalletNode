@@ -207,7 +207,7 @@ function decryption(data, key) {
 var express = require('express');
 var router = express.Router();
 
-router.get('wallet/usdt/balance', function (req, res, next){
+router.get('/wallet/usdt/balance', function (req, res, next){
 	logger.info("查询余额Url",req.url)
 	console.log("查询余额Url",req.url)		
 	var arg = url.parse(req.url, true).query; 

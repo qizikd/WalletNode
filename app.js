@@ -1,20 +1,14 @@
 var createError = require('http-errors');
 var express = require('express');
 
-var usdtRouter = require('./usdt/usdt');
-//var usdtV2Router = require('./usdt/index2');
+var mnemonicRouter = require('./usdt/usdt');
 
 var app = express();
-//app.configure();
-// 这个是我们上面自定义的模块
-var log4js = require("./log");
-app.use(log4js.useLog());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use('/', usdtRouter);
-//app.use('/v2/usdt', usdtV2Router);
+app.use('/', mnemonicRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
